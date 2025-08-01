@@ -1,14 +1,11 @@
 import requests
 import time
-import json
 
 TOKEN = '001.3277213606.1546113568:1011921225'
 BASE_URL = 'https://myteam.mail.ru/bot/v1'
 
-# Состояния пользователя
 users_state = {}
 
-# Возможные города и лекторы
 CITIES = ['Астана', 'Алматы', 'Шымкент']
 LECTORS = ['Турманова Д.А.', 'Секуова Ш.Б.']
 
@@ -29,12 +26,10 @@ def send_message(chat_id, text):
     }
     requests.post(url, params=params, data=data)
 
-
 def send_options(chat_id):
     options_list = '\n'.join(f"{i+1}. {opt}" for i, opt in enumerate(OPTIONS))
-    send_message(chat_id, f"👋 Добро пожаловать! Я бот компании Astana Orleu.Выберите нужный раздел ниже:\n{options_list}\nВведите номер:")
+    send_message(chat_id, f"?? Добро пожаловать! Я бот компании Astana Orleu.\nВыберите нужный раздел ниже:\n{options_list}\nВведите номер:")
     users_state[chat_id] = {'step': 'choose_option'}
-
 
 def start_report(chat_id):
     users_state[chat_id] = {
@@ -43,7 +38,6 @@ def start_report(chat_id):
     }
     cities_list = '\n'.join(f"{i+1}. {c}" for i, c in enumerate(CITIES))
     send_message(chat_id, f"Выберите город:\n{cities_list}\nВведите номер города:")
-
 
 def process_message(chat_id, text):
     state = users_state.get(chat_id)
@@ -134,8 +128,18 @@ def process_message(chat_id, text):
             else:
                 send_message(chat_id, "Неправильный формат. Используйте 'Описание: сумма'.")
 
+def get_updates(last_event_id):
+    url = f'{BASE_URL}/events/get'
+    params = {
+        'token': TOKEN,
+        'lastEventId': last_event_id,
+        'pollTime': 25
+    }
+    response = requests.get(url, params=params, timeout=30)
+    return response.json()
+
 def main():
-    print("✅ Бот запущен. Ожидание событий...")
+    print("? Бот запущен. Ожидание событий...")
     last_event_id = 0
     while True:
         updates = get_updates(last_event_id)
@@ -147,22 +151,10 @@ def main():
                 if event["type"] == "newMessage":
                     chat_id = event["payload"]["chat"]["chatId"]
                     message = event["payload"].get("text", "")
-
-                    print(f"✉️ Сообщение от {chat_id}: {message}")
-
+                    print(f"?? Сообщение от {chat_id}: {message}")
                     process_message(chat_id, message)
         else:
             time.sleep(1)
-
-def get_updates(last_event_id):
-    url = f'{BASE_URL}/events/get'
-    params = {
-        'token': TOKEN,
-        'lastEventId': last_event_id,
-        'pollTime': 25
-    }
-    response = requests.get(url, params=params, timeout=30)
-    return response.json()
 
 if __name__ == '__main__':
     main()
